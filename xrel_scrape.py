@@ -1,3 +1,5 @@
+#!/usr/bin/python
+import argparse
 import gevent
 from gevent.queue import *
 import gevent.monkey
@@ -10,18 +12,20 @@ from fake_useragent import UserAgent #pip install fake-useragent
 from progress.bar import Bar #pip install progress
 import csv
 
+parser = argparse.ArgumentParser(description='Xrel.to Scraper 1.0')
+parser.add_argument('-c','--category', help='''movies top-movies console games apps tv
+english hotstuff xxx games-p2p apps-p2p console-p2p tv-p2p apps-p2p movies-p2p
+''', required=False,type=str,default="apps-p2p")
+parser.add_argument('-d','--date', help="2016-06", required=False,type=str,default="now")
+parser.add_argument('-t','--threads', help='', required=False,type=int,default="25")
+parser.add_argument('-o','--output', help='example.csv', required=False,type=str)
+args = vars(parser.parse_args())
+
 now = datetime.datetime.now()
 gevent.monkey.patch_all()
 q = gevent.queue.JoinableQueue()
 
-
-def check_if_str_in_list(some_list,bad):
-    for s in some_list:
-        for item in bad:
-            if item in s:
-                return True 
-    return False
-
+print "Xrel.to Scraper 1.0"
                 
 def parse_titles(soup,cat):
     titles = []
@@ -33,17 +37,6 @@ def parse_titles(soup,cat):
             else:
                 title = tag.split('_title')[1]
                 title = title.split('">')[1].split('</span>')[0]
-            if cat == 'apps-win':
-                if '.' in title:
-                    tit = title.lower().split('.')
-                elif '_' in title:
-                    tit = title.lower().split('_')
-                flag = ['x64','x32','win32','win32']
-                neg = ['linux','mac','lxn64','linux64','macosx64','lnx64-xforce']
-                if check_if_str_in_list(tit,neg) == False:
-                    if check_if_str_in_list(tit,flag) == True:
-                        titles.append(title)  
-            else:
                 titles.append(title)
         except:
             pass
@@ -91,11 +84,7 @@ def parse_nextpage(cat,date):
     except:
         return 1
     
-
 def get_html(page,cat,date):
-    if date == 'now':
-        date = str(now.strftime("%Y-%m-%d %H:%M")[:-9])
-        print date
     url = "https://www.xrel.to/"+ get_qer(cat) +".html?archive="+date+"&page="+str(page)
     ua = UserAgent().random
     req = urllib2.Request(url, headers={'User-Agent': ua,'Accept':'*/*'})
@@ -121,16 +110,17 @@ def worker():
         except:
             q.put(t, timeout=3)
         finally:
-            gevent.sleep(random.uniform(0.001,0.005))
+            gevent.sleep(random.uniform(0.011,0.025))
             bar.next()
 
 def loader(cat,date):
+    if date == 'now':
+        date = str(now.strftime("%Y-%m-%d %H:%M")[:-9])
+    pcount = parse_nextpage(cat,date)
     global bar
-    pcount = parse_nextpage(cat,date)+1
-    print ""
     bar = Bar('Processing page', max=pcount-1)
     for i in range(1,pcount):
-        q.put((i,cat,date), timeout=3)
+        q.put((i,cat,date), timeout=6)
 
 def asynchronous():
     threads = []
@@ -143,18 +133,22 @@ def asynchronous():
     print ""
     print "Time passed: " + str(end - start)[:6]
 
-
-cat = 'apps'
-date = 'now'
-workers = 24
+cat = args['category']
+date = args['date']
+workers = args['threads']
 gevent.spawn(loader(cat,date)).join()
 asynchronous()
+names = list(set(names))
+print "\nFound:",len(names),"releases."
 
-print len(set(names))
-
-with open(cat+'.txt', "wb") as the_file:
-    csv.register_dialect("custom", delimiter=",", skipinitialspace=True)
-    writer = csv.writer(the_file, dialect="custom")
-    writer.writerow((['release','size(mb)','date']))
-    for tup in names:
-        writer.writerow(tup)
+if args['output'] != None:
+    print "Saving",args['output'],'.'
+    with open(args['output'], "wb") as the_file:
+        csv.register_dialect("custom", delimiter=",", skipinitialspace=True)
+        writer = csv.writer(the_file, dialect="custom")
+        writer.writerow((['release','size(mb)','date']))
+        for tup in names:
+            writer.writerow(tup)
+else:
+    for s in names:
+        print s
