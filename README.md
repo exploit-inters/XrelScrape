@@ -7,12 +7,11 @@ Gevent is used to implement concurrency.
 
 Example usage: xrel_scrape -c apps -dr 2016-01,2016-03 -o apps.csv -t 20
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -c CATEGORY, --category CATEGORY
-                        movies top-movies console games apps tv english
-                        hotstuff xxx games-p2p apps-p2p console-p2p tv-p2p
-                        apps-p2p movies-p2p
+
+-c CATEGORY, --category CATEGORY
+    movies top-movies console games apps tv english
+    hotstuff xxx games-p2p apps-p2p console-p2p tv-p2p
+    apps-p2p movies-p2p
   -d DATE, --date DATE  2016-06
   -dr DATERANGE, --daterange DATERANGE
                         2014-05,2016-05
