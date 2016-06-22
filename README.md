@@ -5,18 +5,7 @@ Scrapes given category for given month and returns release names, file size (in 
 
 Gevent is used to implement concurrency.
 
-
-    __  __        _ ___
-    \ \/ /_ _ ___| / __| __ _ _ __ _ _ __  ___
-     >  <| '_/ -_) \__ \/ _| '_/ _` | '_ \/ -_)
-    /_/\_\_| \___|_|___/\__|_| \__,_| .__/\___|
-         by SUP3RIA                 |_|  v1.0.1
-
-
-usage: xrel_scrape.py [-h] [-c CATEGORY] [-d DATE] [-dr DATERANGE]
-                      [-t THREADS] [-o OUTPUT]
-
-Xrel.to Scraper 1.0
+Example usage: xrel_scrape -c apps -daterange 2016-01,2016-3 -o apps.csv -t 20
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -30,3 +19,12 @@ optional arguments:
   -t THREADS, --threads THREADS
   -o OUTPUT, --output OUTPUT
                         example.csv
+  -ep ERRORPAGES, --errorpages ERRORPAGES
+                        Print pages with an error.
+                        
+                        
+                        
+Note: There is a random blocking of requests in place which results in some pages not beeing scraped.
+You can see which pages were not scraped with the -ep switch.
+                        
+                
