@@ -15,6 +15,7 @@ import csv
 import sys
 import calendar
 import datetime
+import itertools
 
 def months_iter(start_month, start_year, end_month, end_year):
     #http://stackoverflow.com/a/5735013
@@ -36,10 +37,10 @@ def parse_titles(soup,cat):
         if '...' in div.text:
             s = BeautifulSoup(str(div), "lxml")
             a = s.span.attrs
-            titles.append(str(a['title']))
+            titles.append(str(a['title']).strip())
         else:
             a = div.text.strip()
-            titles.append(str(a.split('  ')[1]))
+            titles.append(str(a.split('  ')[1]).strip())
     return titles
 
 def parse_sizes(soup):
@@ -103,20 +104,7 @@ def scrape(page,cat,date):
     date = parse_date(soup)
     return zip(rl_name, mb,date)
 
-def worker():
-    global names
-    names = []
-    while not q.empty():
-        t = q.get()
-        try:
-            r = scrape(t[0],t[1],t[2])
-            names.extend(r)
-        except:
-            q.put(t, timeout=3)
-        finally:
-            gevent.sleep(random.uniform(0.011,0.025))
-            bar.next()
-
+            
 def loader(cat,date,date_iter):
     global q
     global bar
@@ -148,15 +136,32 @@ def loader(cat,date,date_iter):
             sys.exit()
 
     if len(date_range_c)>0:
-        for date in date_range_c:
-            for j in pcount_range:
-                for i in range(1,j+1):
-                    q.put((i,cat,date), timeout=6)
+        for f,b in itertools.izip(date_range_c,pcount_range):
+            for i in range(b):
+                job = i+1,cat,f,0.3,0.8
+                q.put(job, timeout=30)
     else:
         pcount = parse_nextpage(cat,date)
         bar = Bar('Processing page', max=pcount)
         for i in range(1,pcount+1):
-            q.put((i,cat,date), timeout=6)
+            q.put((i,cat,date,0.3,0.8), timeout=30)
+
+
+def worker():
+    global names
+    global faulty
+    faulty = []
+    names = []
+    while not q.empty():
+        t = q.get()
+        gevent.sleep(random.uniform(t[3],t[4]))
+        try:
+            r = scrape(t[0],t[1],t[2])
+            names.extend(r)
+        except:
+            faulty.append(t)
+        finally:
+            bar.next()
 
 def asynchronous(workers):
     threads = []
@@ -175,7 +180,7 @@ def save(o):
         with open(o, "wb") as the_file:
             csv.register_dialect("custom", delimiter=",", skipinitialspace=True)
             writer = csv.writer(the_file, dialect="custom")
-            writer.writerow((['release','size(mb)','date']))
+            writer.writerow((['Release','Size','Date']))
             for tup in names:
                 writer.writerow(tup)
     else:
@@ -200,7 +205,7 @@ def main(args=None):
     parser.add_argument('-dr','--daterange', help='2014-05,2016-05', required=False,type=str)
     parser.add_argument('-t','--threads', help='', required=False,type=int,default="12")
     parser.add_argument('-o','--output', help='example.csv', required=False,type=str)
-
+    parser.add_argument('-ep','--errorpages', help='Print pages with an error.', required=False,type=bool,default=False)
     args = vars(parser.parse_args())
     gevent.monkey.patch_all()
     cat = args['category']
@@ -209,7 +214,12 @@ def main(args=None):
     workers = args['threads']
     gevent.spawn(loader(cat,date,date_iter)).join()
     asynchronous(workers)
-    print "\nFound:",len(names),"releases.\n"
+    print "\nFound:",len(names),"releases"
+    if len(faulty)>0:
+        print "Pages with error:",len(faulty)
+        if args['errorpages'] == True:
+            for s in faulty:
+                print s
     save(args['output'])
     print "\nDone."
 
