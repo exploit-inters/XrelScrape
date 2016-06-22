@@ -37,7 +37,12 @@ def parse_titles(soup,cat):
         if '...' in div.text:
             s = BeautifulSoup(str(div), "lxml")
             a = s.span.attrs
-            titles.append(str(a['title']).strip())
+            try:
+                titles.append(str(a['title']).strip())
+            except:
+                html = str(div)
+                html = html.split('<span id="')[1].split('>')[1][:-6]
+                titles.append(str(html).strip())
         else:
             a = div.text.strip()
             titles.append(str(a.split('  ')[1]).strip())
