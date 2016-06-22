@@ -5,7 +5,7 @@ Scrapes given category for given month and returns release names, file size (in 
 
 Gevent is used to implement concurrency.
 
-Example usage: xrel_scrape -c apps -daterange 2016-01,2016-3 -o apps.csv -t 20
+Example usage: xrel_scrape -c apps -dr 2016-01,2016-03 -o apps.csv -t 20
 
 optional arguments:
   -h, --help            show this help message and exit
