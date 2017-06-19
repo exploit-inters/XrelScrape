@@ -164,7 +164,17 @@ def worker():
             r = scrape(t[0],t[1],t[2])
             names.extend(r)
         except:
-            faulty.append(t)
+			xyz = False
+			for i in range(3):
+				try:
+					r = scrape(t[0],t[1],t[2])
+					names.extend(r)
+					xyz = True
+					break
+				except:
+					pass
+			if not xyz:
+				faulty.append(t)
         finally:
             bar.next()
 
@@ -210,7 +220,7 @@ def main(args=None):
     parser.add_argument('-dr','--daterange', help='2014-05,2016-05', required=False,type=str)
     parser.add_argument('-t','--threads', help='', required=False,type=int,default="12")
     parser.add_argument('-o','--output', help='example.csv', required=False,type=str)
-    parser.add_argument('-ep','--errorpages', help='Print pages with an error.', required=False,type=bool,default=False)
+    parser.add_argument('-ep','--errorpages', help=' When true print pages with an error.', required=False,type=bool,default=False)
     args = vars(parser.parse_args())
     gevent.monkey.patch_all()
     cat = args['category']
